@@ -14,6 +14,7 @@ import Header from "@/component/Header";
 import SideBar from "@/component/Sidebar";
 import initialFormSchema from "@/data/InitialFormSchema";
 import Settings from "@/component/Settings";
+import DOMPurify from "dompurify";
 
 /* TODO: make code more modular and simple*/
 
@@ -42,7 +43,10 @@ const getDefaultField = (type) => {
         options: ["Option 1=option1", "Option 2=option2"],
       };
     case "acceptance":
-      return { ...baseField, content: "<p>I agree to the terms</p>" };
+      return {
+        ...baseField,
+        content: "<p><strong>I agree to the terms</strong></p>",
+      };
     default:
       return baseField;
   }
@@ -149,10 +153,12 @@ const FormField = ({
               className="mt-1 mr-2"
               required={field.required}
             />
-            <label
-              htmlFor={field.id}
-              dangerouslySetInnerHTML={{ __html: field.content }}
+            <div
+              dangerouslySetInnerHTML={{
+                __html: DOMPurify.sanitize(field.content),
+              }}
             />
+            {field.required && <span className="text-red-500 ml-0.5">*</span>}
           </div>
         );
 
@@ -174,9 +180,7 @@ const FormField = ({
 
   return (
     <div
-      className={`relative p-2 border-2 border-dashed border-transparent hover:border-blue-300 transition-all duration-200 ${
-        !isPreview ? "cursor-pointer" : ""
-      }`}
+      className="relative p-2 border-2 border-dashed border-transparent hover:border-blue-300 transition-all duration-200"
       style={{ width: field.columnWidth }}
       onMouseEnter={onHover}
       onMouseLeave={onLeave}
@@ -216,28 +220,30 @@ const FormField = ({
         </div>
       )}
 
-      {/* Drag handle for reordering */}
-      {!isPreview && (
-        <div
-          draggable
-          onDragStart={handleDragStart}
-          onDragEnd={handleDragEnd}
-          className="absolute left-2 top-1/2 transform -translate-y-1/2 cursor-move opacity-0 hover:opacity-100 transition-opacity z-10 bg-white rounded p-1 shadow-sm border"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <GripVertical
-            size={16}
-            className="text-gray-400 hover:text-gray-600"
-          />
-        </div>
-      )}
-
-      <div className="space-y-2">
-        <label className="block text-sm font-medium text-gray-700">
-          {field.label}
-          {field.required && <span className="text-red-500 ml-1">*</span>}
+      <div className="space-y-2 relative">
+        <label className="block text-sm font-semibold text-gray-900">
+          {field.type === "acceptance" ? " " : field.label}
+          {field.required && field.type !== "acceptance" && (
+            <span className="text-red-500 ml-0.5">*</span>
+          )}
         </label>
-        {renderInput()}
+        <div className="flex items-center" draggable>
+          <div className="flex-1">{renderInput()} </div>
+          {!isPreview && (
+            <div
+              draggable
+              onDragStart={handleDragStart}
+              onDragEnd={handleDragEnd}
+              onClick={(e) => e.stopPropagation()}
+              className="ml-2 cursor-move bg-white hover:bg-gray-50"
+            >
+              <GripVertical
+                size={16}
+                className="text-gray-400 hover:text-gray-600"
+              />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -535,10 +541,10 @@ const FormBuilder = () => {
                       onDragOver={(e) => {
                         e.preventDefault();
                         if (draggedFieldIndex !== null) {
-                          setReorderDropIndex(index);
+                          setReorderDropIndex(formSchema.fields.length+1);
                           return;
                         }
-                        setDropIndex(index);
+                        setDropIndex(formSchema.fields.length+1);
                       }}
                       onDragEnd={(e) => {
                         e.preventDefault();
