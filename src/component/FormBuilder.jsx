@@ -50,18 +50,22 @@ const getDefaultField = (type) => {
 
 const FormField = ({
   field,
+  index,
   isPreview,
   onHover,
   onLeave,
   showActions,
   onAction,
+  onFieldDragStart,
+  onFieldDragEnd,
+  isDragging,
 }) => {
   const renderInput = () => {
     const baseProps = {
       id: field.id,
       name: field.name,
       className:
-        "w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent",
+        "w-full p-2 bg-white border-1 border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent",
       placeholder: field.placeholder || "",
       required: field.required,
     };
@@ -157,9 +161,20 @@ const FormField = ({
     }
   };
 
+  const handleDragStart = (e) => {
+    e.stopPropagation();
+    onFieldDragStart(index);
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragEnd = (e) => {
+    e.stopPropagation();
+    onFieldDragEnd();
+  };
+
   return (
     <div
-      className={`relative p-4 border-2 border-dashed border-transparent hover:border-blue-300 transition-all duration-200 ${
+      className={`relative p-2 border-2 border-dashed border-transparent hover:border-blue-300 transition-all duration-200 ${
         !isPreview ? "cursor-pointer" : ""
       }`}
       style={{ width: field.columnWidth }}
@@ -203,8 +218,17 @@ const FormField = ({
 
       {/* Drag handle for reordering */}
       {!isPreview && (
-        <div className="absolute left-2 top-1/2 transform -translate-y-1/2 cursor-move opacity-0 hover:opacity-100 transition-opacity">
-          <GripVertical size={16} className="text-gray-400" />
+        <div
+          draggable
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+          className="absolute left-2 top-1/2 transform -translate-y-1/2 cursor-move opacity-0 hover:opacity-100 transition-opacity z-10 bg-white rounded p-1 shadow-sm border"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <GripVertical
+            size={16}
+            className="text-gray-400 hover:text-gray-600"
+          />
         </div>
       )}
 
@@ -228,6 +252,8 @@ const FormBuilder = () => {
   const [formData, setFormData] = useState({});
   const [submitted, setSubmitted] = useState(false);
   const [dropIndex, setDropIndex] = useState(null);
+  const [draggedFieldIndex, setDraggedFieldIndex] = useState(null);
+  const [reorderDropIndex, setReorderDropIndex] = useState(null);
 
   const handleFieldAction = (fieldId, action) => {
     const fieldIndex = formSchema.fields.findIndex((f) => f.id === fieldId);
@@ -296,6 +322,25 @@ const FormBuilder = () => {
     }));
   };
 
+  const handleFieldReorder = (fromIndex, toIndex) => {
+    if (fromIndex === toIndex) return;
+
+    setFormSchema((prev) => {
+      const newFields = [...prev.fields];
+      const [draggedField] = newFields.splice(fromIndex, 1);
+      newFields.splice(toIndex, 0, draggedField);
+      return { ...prev, fields: newFields };
+    });
+  };
+
+  const handleFieldDragStart = (index) => {
+    setDraggedFieldIndex(index);
+  };
+
+  const handleFieldDragEnd = () => {
+    setDraggedFieldIndex(null);
+    setReorderDropIndex(null);
+  };
   return (
     <div className="flex flex-col h-screen">
       <Header />
@@ -317,7 +362,7 @@ const FormBuilder = () => {
                     ? `text-gray-500
                         opacity-50 
                         cursor-not-allowed 
-                        bg-blue-400
+                        bg-blue-500
                        `
                     : `bg-blue-600 hover:bg-blue-700`
                 }  text-white rounded `}
@@ -342,7 +387,7 @@ const FormBuilder = () => {
                       ? `text-gray-500
                         opacity-50 
                         cursor-not-allowed 
-                        bg-red-400
+                        bg-red-500
                        `
                       : `bg-red-600 hover:bg-red-700`
                   }  text-white rounded `}
@@ -390,10 +435,10 @@ const FormBuilder = () => {
                 )}
               </div>
             ) : (
-              <div className="max-w-4xl mx-auto bg-white rounded-lg shadow p-6 min-h-96">
+              <div className="max-w-4xl mx-auto bg-gradient-to-br from-blue-50 to-slate-100 rounded-lg shadow p-6 min-h-96">
                 {formSchema.fields.length === 0 ? (
                   <div
-                    className="flex items-center justify-center h-48 border-2 border-dashed border-gray-300 rounded cursor-pointer hover:border-blue-400 transition"
+                    className="flex items-center justify-center h-96 border-2 border-dashed border-gray-300 rounded cursor-pointer hover:border-blue-400 transition"
                     onDragOver={(e) => {
                       e.preventDefault();
                       setDropIndex(0);
@@ -424,10 +469,25 @@ const FormBuilder = () => {
                           className="h-6 bg-transparent hover:bg-blue-100 rounded cursor-pointer transition relative flex items-center justify-center"
                           onDragOver={(e) => {
                             e.preventDefault();
-                            setDropIndex(index);
+                            if (draggedFieldIndex !== null) {
+                              setReorderDropIndex(index);
+                            } else {
+                              setDropIndex(index);
+                            }
                           }}
-                          onDrop={(e) => handleDrop(e, index)}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            if (draggedFieldIndex !== null) {
+                              handleFieldReorder(draggedFieldIndex, index);
+                            } else {
+                              handleDrop(e, index);
+                            }
+                          }}
                           onDragLeave={(e) => {
+                            if (draggedFieldIndex !== null) {
+                              setReorderDropIndex(null);
+                              return;
+                            }
                             const related = e.relatedTarget;
                             if (
                               !related ||
@@ -442,18 +502,20 @@ const FormBuilder = () => {
                             }
                           }}
                         >
-                          {dropIndex === index && (
-                            <div className="border-2 border-dashed border-blue-400 bg-blue-50 p-3 rounded opacity-70">
-                              <FormField
-                                field={getDefaultField(draggedFieldType)}
-                                isPreview={true}
-                              />
-                            </div>
-                          )}
+                          {dropIndex === index &&
+                            draggedFieldIndex === null && (
+                              <div className="border-2 border-dashed border-blue-400 bg-blue-50 p-3 rounded opacity-70">
+                                <FormField
+                                  field={getDefaultField(draggedFieldType)}
+                                  isPreview={true}
+                                />
+                              </div>
+                            )}
                         </div>
 
                         <FormField
                           field={field}
+                          index={index}
                           isPreview={false}
                           onHover={() => setHoveredField(field.id)}
                           onLeave={() => setHoveredField(null)}
@@ -461,6 +523,9 @@ const FormBuilder = () => {
                           onAction={(action) =>
                             handleFieldAction(field.id, action)
                           }
+                          onFieldDragStart={handleFieldDragStart}
+                          onFieldDragEnd={handleFieldDragEnd}
+                          isDragging={draggedFieldIndex === index}
                         />
                       </div>
                     ))}
@@ -469,25 +534,48 @@ const FormBuilder = () => {
                       className="h-6 bg-transparent hover:bg-blue-100 rounded cursor-pointer transition relative flex items-center justify-center"
                       onDragOver={(e) => {
                         e.preventDefault();
-                        setDropIndex(formSchema.fields.length);
+                        if (draggedFieldIndex !== null) {
+                          setReorderDropIndex(index);
+                          return;
+                        }
+                        setDropIndex(index);
                       }}
                       onDragEnd={(e) => {
                         e.preventDefault();
+                        if (draggedFieldIndex !== null) {
+                          setReorderDropIndex(null);
+                          return;
+                        }
                         setDropIndex(null);
                       }}
-                      onDrop={(e) => handleDrop(e, formSchema.fields.length)}
-                      onDragLeave={(e) => {
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        if (draggedFieldIndex !== null) {
+                          handleFieldReorder(
+                            draggedFieldIndex,
+                            formSchema.fields.length
+                          );
+                          return;
+                        }
+                        handleDrop(e, formSchema.fields.length);
+                      }}
+                      onDragLeave={() => {
+                        if (draggedFieldIndex !== null) {
+                          setReorderDropIndex(null);
+                          return;
+                        }
                         setDropIndex(null);
                       }}
                     >
-                      {dropIndex === formSchema.fields.length && (
-                        <div className="border-2 border-dashed border-blue-400 bg-blue-50 p-3 rounded opacity-70">
-                          <FormField
-                            field={getDefaultField(draggedFieldType)}
-                            isPreview={true}
-                          />
-                        </div>
-                      )}
+                      {dropIndex === formSchema.fields.length &&
+                        draggedFieldIndex === null && (
+                          <div className="border-2 border-dashed border-blue-400 bg-blue-50 p-3 rounded opacity-70">
+                            <FormField
+                              field={getDefaultField(draggedFieldType)}
+                              isPreview={true}
+                            />
+                          </div>
+                        )}
                     </div>
                   </div>
                 )}
