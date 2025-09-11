@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useRef } from "react";
 import {
-  Settings,
+  SettingsIcon,
   Trash2,
   Copy,
   Eye,
@@ -13,6 +13,7 @@ import {
 import Header from "@/component/Header";
 import SideBar from "@/component/Sidebar";
 import initialFormSchema from "@/data/InitialFormSchema";
+import Settings from "@/component/Settings";
 
 /* TODO: make code more modular and simple*/
 
@@ -175,7 +176,7 @@ const FormField = ({
             className="p-1 hover:bg-gray-100 rounded"
             title="Settings"
           >
-            <Settings size={14} />
+            <SettingsIcon size={14} />
           </button>
           <button
             onClick={(e) => {
@@ -217,7 +218,6 @@ const FormField = ({
     </div>
   );
 };
-
 
 const FormBuilder = () => {
   const [formSchema, setFormSchema] = useState(initialFormSchema);
@@ -278,7 +278,7 @@ const FormBuilder = () => {
   };
 
   /* TODO : need to handle form data submit*/
-  const handleFormSubmit = (e) => { 
+  const handleFormSubmit = (e) => {
     e.preventDefault();
 
     const data = {};
@@ -287,14 +287,22 @@ const FormBuilder = () => {
     setSubmitted(true);
   };
 
+  const handleFieldSave = (updatedField) => {
+    setFormSchema((prev) => ({
+      ...prev,
+      fields: prev.fields.map((f) =>
+        f.id === updatedField.id ? updatedField : f
+      ),
+    }));
+  };
+
   return (
     <div className="flex flex-col h-screen">
       <Header />
       <div className="flex flex-1 overflow-hidden">
         {!isPreview && <SideBar handleDragStart={handleDragStart} />}
-      
+
         <div className="flex-1 flex flex-col">
-   
           <header className="bg-white border-b p-4 flex items-center justify-between">
             <h1 className="text-xl font-bold">{formSchema?.name}</h1>
             <div className="flex items-center space-x-4">
@@ -444,7 +452,6 @@ const FormBuilder = () => {
                           )}
                         </div>
 
-                      
                         <FormField
                           field={field}
                           isPreview={false}
@@ -485,6 +492,13 @@ const FormBuilder = () => {
                   </div>
                 )}
               </div>
+            )}
+            {selectedField && (
+              <Settings
+                field={selectedField}
+                onClose={() => setSelectedField(null)}
+                onSave={handleFieldSave}
+              />
             )}
           </div>
         </div>
