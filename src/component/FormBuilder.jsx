@@ -14,7 +14,9 @@ import Header from "@/component/Header";
 import SideBar from "@/component/Sidebar";
 import initialFormSchema from "@/data/InitialFormSchema";
 import Settings from "@/component/Settings";
-import DOMPurify from "dompurify";
+import DOMPurify from "isomorphic-dompurify";
+import { FieldNames } from "@/constants/FieldConstants";
+
 
 /* TODO: make code more modular and simple*/
 
@@ -75,18 +77,18 @@ const FormField = ({
     };
 
     switch (field.type) {
-      case "text":
-      case "email":
+      case FieldNames.TEXT:
+      case FieldNames.EMAIL:
         return <input type={field.type} {...baseProps} />;
 
-      case "date":
-      case "time":
+      case FieldNames.DATE:
+      case FieldNames.TIME:
         return <input type={field.type} {...baseProps} />;
 
-      case "file":
+      case FieldNames.FILE:
         return <input type="file" {...baseProps} />;
 
-      case "select":
+      case FieldNames.SELECT:
         return (
           <select {...baseProps}>
             <option value="">{field.placeholder || "Select an option"}</option>
@@ -101,7 +103,7 @@ const FormField = ({
           </select>
         );
 
-      case "checkbox":
+      case FieldNames.CHECKBOX:
         return (
           <div className="space-y-2">
             {field.options?.map((option, idx) => {
@@ -122,7 +124,7 @@ const FormField = ({
           </div>
         );
 
-      case "radio":
+      case FieldNames.RADIO:
         return (
           <div className="space-y-2">
             {field.options?.map((option, idx) => {
@@ -143,7 +145,7 @@ const FormField = ({
           </div>
         );
 
-      case "acceptance":
+      case FieldNames.ACCEPTANCE:
         return (
           <div className="flex items-start">
             <input
@@ -155,7 +157,7 @@ const FormField = ({
             />
             <div
               dangerouslySetInnerHTML={{
-                __html: DOMPurify.sanitize(field.content),
+                __html: DOMPurify.sanitize(field.content || ""),
               }}
             />
             {field.required && <span className="text-red-500 ml-0.5">*</span>}
@@ -541,10 +543,10 @@ const FormBuilder = () => {
                       onDragOver={(e) => {
                         e.preventDefault();
                         if (draggedFieldIndex !== null) {
-                          setReorderDropIndex(formSchema.fields.length+1);
+                          setReorderDropIndex(formSchema.fields.length + 1);
                           return;
                         }
-                        setDropIndex(formSchema.fields.length+1);
+                        setDropIndex(formSchema.fields.length + 1);
                       }}
                       onDragEnd={(e) => {
                         e.preventDefault();

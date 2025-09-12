@@ -9,7 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "dompurify": "^3.2.6",
+    "isomorphic-dompurify": "^2.26.0",
     "lucide-react": "^0.543.0",
     "next": "15.5.2",
     "react": "19.1.0",

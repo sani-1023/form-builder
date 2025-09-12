@@ -1,5 +1,5 @@
 import React from "react";
-import { fieldTypes } from "@/constants/FieldTypes";
+import { fieldTypes } from "@/constants/FieldConstants";
 
 const Sidebar = ({ handleDragStart }) => {
   return (

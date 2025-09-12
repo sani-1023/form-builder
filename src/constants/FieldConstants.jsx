@@ -22,3 +22,14 @@ export const fieldTypes = [
   { id: 9, type: "acceptance", label: "Acceptance", icon: <SquareCheck /> },
 ];
 
+export const FieldNames = {
+  TEXT: "text",
+  EMAIL: "email",
+  DATE: "date",
+  TIME: "time",
+  FILE: "file",
+  SELECT: "select",
+  CHECKBOX: "checkbox",
+  RADIO: "radio",
+  ACCEPTANCE: "acceptance",
+};
