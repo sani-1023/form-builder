@@ -16,7 +16,8 @@ import initialFormSchema from "@/data/InitialFormSchema";
 import Settings from "@/component/Settings";
 import DOMPurify from "isomorphic-dompurify";
 import { FieldNames } from "@/constants/FieldConstants";
-
+import FormPreview from "@/component/FormPreview";
+import FormHeader from "@/component/FormHeader";
 
 /* TODO: make code more modular and simple*/
 
@@ -54,7 +55,7 @@ const getDefaultField = (type) => {
   }
 };
 
-const FormField = ({
+export const FormField = ({
   field,
   index,
   isPreview,
@@ -229,7 +230,7 @@ const FormField = ({
             <span className="text-red-500 ml-0.5">*</span>
           )}
         </label>
-        <div className="flex items-center" draggable>
+        <div className="flex items-center">
           <div className="flex-1">{renderInput()} </div>
           {!isPreview && (
             <div
@@ -257,7 +258,6 @@ const FormBuilder = () => {
   const [hoveredField, setHoveredField] = useState(null);
   const [selectedField, setSelectedField] = useState(null);
   const [draggedFieldType, setDraggedFieldType] = useState(null);
-  const [formData, setFormData] = useState({});
   const [submitted, setSubmitted] = useState(false);
   const [dropIndex, setDropIndex] = useState(null);
   const [draggedFieldIndex, setDraggedFieldIndex] = useState(null);
@@ -269,7 +269,6 @@ const FormBuilder = () => {
 
     switch (action) {
       case "settings":
-        /*TODO: complete settings */
         setSelectedField(field);
         break;
       case "duplicate":
@@ -311,16 +310,6 @@ const FormBuilder = () => {
     setDropIndex(null);
   };
 
-  /* TODO : need to handle form data submit*/
-  const handleFormSubmit = (e) => {
-    e.preventDefault();
-
-    const data = {};
-
-    setFormData(data);
-    setSubmitted(true);
-  };
-
   const handleFieldSave = (updatedField) => {
     setFormSchema((prev) => ({
       ...prev,
@@ -331,7 +320,8 @@ const FormBuilder = () => {
   };
 
   const handleFieldReorder = (fromIndex, toIndex) => {
-    if (fromIndex === toIndex) return;
+
+    if (toIndex-fromIndex===0 || toIndex-fromIndex===1 ) return;
 
     setFormSchema((prev) => {
       const newFields = [...prev.fields];
@@ -356,97 +346,23 @@ const FormBuilder = () => {
         {!isPreview && <SideBar handleDragStart={handleDragStart} />}
 
         <div className="flex-1 flex flex-col">
-          <header className="bg-white border-b p-4 flex items-center justify-between">
-            <h1 className="text-xl font-bold">{formSchema?.name}</h1>
-            <div className="flex items-center space-x-4">
-              <button
-                disabled={formSchema.fields.length === 0}
-                onClick={() => {
-                  setIsPreview(!isPreview);
-                  setSubmitted(false);
-                }}
-                className={`flex items-center px-4 py-2 ${
-                  formSchema.fields.length === 0
-                    ? `text-gray-500
-                        opacity-50 
-                        cursor-not-allowed 
-                        bg-blue-500
-                       `
-                    : `bg-blue-600 hover:bg-blue-700`
-                }  text-white rounded `}
-              >
-                {isPreview ? (
-                  <Edit3 size={16} className="mr-1" />
-                ) : (
-                  <Eye size={16} className="mr-1" />
-                )}
-                {isPreview ? "Edit" : "Preview"}
-              </button>
-
-              {!isPreview && (
-                <button
-                  onClick={() =>
-                    setFormSchema((prev) => {
-                      return { ...prev, fields: [] };
-                    })
-                  }
-                  className={`flex items-center px-4 py-2 ${
-                    formSchema.fields.length === 0
-                      ? `text-gray-500
-                        opacity-50 
-                        cursor-not-allowed 
-                        bg-red-500
-                       `
-                      : `bg-red-600 hover:bg-red-700`
-                  }  text-white rounded `}
-                >
-                  <Trash2 size={16} className="mr-1" /> Clear Canvas
-                </button>
-              )}
-            </div>
-          </header>
-
+          <FormHeader
+            formName={formSchema?.name}
+            isPreview={isPreview}
+            setFormSchema={setFormSchema}
+            setIsPreview={setIsPreview}
+            setSubmitted={setSubmitted}
+            isFormEmpty = {formSchema.fields.length === 0}
+          />
           {/* Form Canvas */}
           <div className="flex-1 p-6 overflow-auto">
             {isPreview ? (
-              <div className="max-w-4xl mx-auto bg-white rounded-lg shadow p-6">
-                <div className="form-preview-container">
-                  <div className="flex flex-wrap -mx-2">
-                    {formSchema?.fields.map((field) => (
-                      <FormField
-                        key={field.id}
-                        field={field}
-                        isPreview={true}
-                      />
-                    ))}
-                  </div>
-                  <button
-                    onClick={handleFormSubmit}
-                    className="mt-6 bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
-                  >
-                    Submit
-                  </button>
-                </div>
-
-                {submitted && (
-                  <div className="mt-6 p-4 bg-green-100 border border-green-300 rounded">
-                    <h3 className="font-semibold text-green-800">
-                      {formSchema?.successMessage}
-                    </h3>
-                    <div className="mt-2">
-                      <h4 className="font-medium">Submitted Data:</h4>
-                      <pre className="mt-1 text-sm bg-gray-100 p-2 rounded">
-                        {JSON.stringify(formData, null, 2)}
-                      </pre>
-                    </div>
-                  </div>
-                )}
-              </div>
+              <FormPreview formSchema={formSchema} />
             ) : (
               <div className="max-w-4xl mx-auto bg-gradient-to-br from-blue-50 to-slate-100 rounded-lg shadow p-6 min-h-96">
                 {formSchema.fields.length === 0 ? (
                   <div
-                    className="flex items-center justify-center h-96 border-2 border-dashed border-gray-300 rounded cursor-pointer hover:border-blue-400 transition"
+                    className="flex items-center justify-center h-96 border-2 border-dashed border-gray-400 rounded cursor-pointer hover:border-blue-500 transition"
                     onDragOver={(e) => {
                       e.preventDefault();
                       setDropIndex(0);
@@ -589,6 +505,7 @@ const FormBuilder = () => {
                 )}
               </div>
             )}
+
             {selectedField && (
               <Settings
                 field={selectedField}
