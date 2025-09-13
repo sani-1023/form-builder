@@ -1,14 +1,14 @@
 import { Edit3Icon, EyeIcon, Trash2Icon } from "lucide-react";
-import React from "react";
+import React, { useState } from "react";
 
 const FormHeader = ({
   formName,
   isPreview,
   setIsPreview,
-  setSubmitted,
   setFormSchema,
   isFormEmpty,
 }) => {
+
   return (
     <>
       <header className="bg-white border-b p-4 flex items-center justify-between">
@@ -18,7 +18,6 @@ const FormHeader = ({
             disabled={isFormEmpty}
             onClick={() => {
               setIsPreview(!isPreview);
-              setSubmitted(false);
             }}
             className={`flex items-center px-4 py-2 ${
               isFormEmpty
