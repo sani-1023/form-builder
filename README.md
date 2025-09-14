@@ -4,14 +4,14 @@ A powerful, intuitive drag-and-drop form builder built with Next.js that allows 
 
 ## 🚀 Features
 
-### ✅ Core Features Implemented
-- **🎨 Dynamic Form Rendering** - Renders forms from JSON schema with support for 9 input types
-- **🖱️ Drag & Drop Interface** - Reorder fields and add new elements seamlessly using native HTML5 Drag and Drop API
-- **⚙️ Real-time Field Editing** - Hover actions (Settings, Delete, Duplicate) on every form element
-- **🎛️ Advanced Settings Panel** - Configure field properties including requirement, options, and label editing
-- **👁️ Live Preview Mode** - Switch between builder and preview modes instantly
-- **✅ Form Validation** - Built-in validation with required field support
-- **📊 Submission Handling** - Display submitted data in a clean table format
+###  Core Features Implemented
+- **Dynamic Form Rendering** - Renders forms from JSON schema with support for 9 input types
+- **Drag & Drop Interface** - Reorder fields and add new elements seamlessly using native HTML5 Drag and Drop API
+- **Real-time Field Editing** - Hover actions (Settings, Delete, Duplicate) on every form element
+- **Advanced Settings Panel** - Configure field properties including requirement, options, and label editing
+- **Live Preview Mode** - Switch between builder and preview modes instantly
+- **Form Validation** - Built-in validation with required field support
+- **Submission Handling** - Display submitted data in a clean table format
 
 ### 🔧 Supported Field Types
 - **Text Input** - Single line text with placeholder support
@@ -95,6 +95,24 @@ src/
 
 4. **Open your browser**
    Navigate to [http://localhost:3000](http://localhost:3000)
+
+### 🐳 Docker Setup
+
+You can also run the application using Docker:
+
+1. **Build the Docker image**
+   ```bash
+   docker build -t form-builder .
+   ```
+
+2. **Run the container**
+   ```bash
+   docker run -p 3000:3000 form-builder
+   ```
+
+3. **Access the application**
+   Navigate to [http://localhost:3000](http://localhost:3000)
+
 
 ## 🎮 How to Use
 
