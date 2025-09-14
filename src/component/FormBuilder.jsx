@@ -1,15 +1,6 @@
 "use client";
 import React, { useState, useRef } from "react";
-import {
-  SettingsIcon,
-  Trash2,
-  Copy,
-  Eye,
-  Edit3,
-  ListPlusIcon,
-  GripVertical,
-  Plus,
-} from "lucide-react";
+import { SettingsIcon, Trash2, Copy, GripVertical } from "lucide-react";
 import Header from "@/component/Header";
 import SideBar from "@/component/Sidebar";
 import initialFormSchema from "@/data/InitialFormSchema";
@@ -22,7 +13,7 @@ import FormHeader from "@/component/FormHeader";
 /* TODO: make code more modular and simple*/
 
 // Generate unique ID for new fields
-const generateId = () => Math.random().toString(36).substr(2, 8);
+const generateId = () => Math.random().toString(36).slice(2, 8);
 
 const getDefaultField = (type) => {
   const baseField = {
@@ -66,9 +57,10 @@ export const FormField = ({
   onFieldDragStart,
   onFieldDragEnd,
   isDragging,
+  onChange,
+  value,
 }) => {
   const [isHover, setIsHover] = useState(false);
-
   const renderInput = () => {
     const baseProps = {
       id: field.id,
@@ -77,23 +69,32 @@ export const FormField = ({
         "w-full p-2 bg-white border-1 border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent",
       placeholder: field.placeholder || "",
       required: field.required,
+      onChange: (e) => onChange?.(e.target.value),
     };
 
     switch (field.type) {
       case FieldNames.TEXT:
       case FieldNames.EMAIL:
-        return <input type={field.type} {...baseProps} />;
-
       case FieldNames.DATE:
       case FieldNames.TIME:
         return <input type={field.type} {...baseProps} />;
 
       case FieldNames.FILE:
-        return <input type="file" {...baseProps} />;
+        return (
+          <input
+            type="file"
+            {...baseProps}
+            onChange={(e) => onChange?.(e.target.files?.[0].name)}
+          />
+        );
 
       case FieldNames.SELECT:
         return (
-          <select {...baseProps}>
+          <select
+            {...baseProps}
+            value={value || ""}
+            onChange={(e) => onChange?.(e.target.value)}
+          >
             <option value="">{field.placeholder || "Select an option"}</option>
             {field.options?.map((option, idx) => {
               const [label, value] = option.split("=");
@@ -110,15 +111,24 @@ export const FormField = ({
         return (
           <div className="space-y-2">
             {field.options?.map((option, idx) => {
-              const [label, value] = option.split("=");
+              const [label, val] = option.split("=");
               return (
                 <div key={idx} className="flex items-center">
                   <input
                     type="checkbox"
                     id={`${field.id}_${idx}`}
                     name={field.name}
-                    value={value}
+                    value={val}
+                    checked={Array.isArray(value) && value.includes(val)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        onChange?.([...(value || []), val]);
+                      } else {
+                        onChange?.((value || []).filter((v) => v !== val));
+                      }
+                    }}
                     className="mr-2"
+                    required={field.required && idx === 0 && !(value?.length)}
                   />
                   <label htmlFor={`${field.id}_${idx}`}>{label}</label>
                 </div>
@@ -131,15 +141,18 @@ export const FormField = ({
         return (
           <div className="space-y-2">
             {field.options?.map((option, idx) => {
-              const [label, value] = option.split("=");
+              const [label, val] = option.split("=");
               return (
                 <div key={idx} className="flex items-center">
                   <input
                     type="radio"
                     id={`${field.id}_${idx}`}
                     name={field.name}
-                    value={value}
+                    value={val}
+                    checked={value === val}
+                    onChange={(e) => onChange?.(e.target.value)}
                     className="mr-2"
+                    required={field.required}
                   />
                   <label htmlFor={`${field.id}_${idx}`}>{label}</label>
                 </div>
@@ -157,6 +170,8 @@ export const FormField = ({
               name={field.name}
               className="mt-1 mr-2"
               required={field.required}
+              checked={!!value}
+              onChange={(e) => onChange?.(e.target.checked)}
             />
             <div
               dangerouslySetInnerHTML={{
@@ -189,17 +204,21 @@ export const FormField = ({
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
       className={`relative p-2 border-2 border-dotted ${
-        isDragging ? "scale-95 opacity-70 border-blue-400 bg-blue-100" : "border-transparent"
-      } hover:border-blue-300 transition-all duration-200 cursor-move`}
+        isDragging
+          ? "scale-95 opacity-70 border-blue-400 bg-blue-100"
+          : "border-transparent"
+      } ${
+        !isPreview
+          ? "cursor-move hover:border-blue-300 transition-all duration-200"
+          : ""
+      }`}
       style={{ width: field.columnWidth }}
-
-  
       onMouseEnter={() => {
-        onHover();
+        onHover?.();
         setIsHover(true);
       }}
       onMouseLeave={() => {
-        onLeave();
+        onLeave?.();
         setIsHover(false);
       }}
     >
@@ -253,10 +272,7 @@ export const FormField = ({
                 isHover ? "opacity-100" : "opacity-0"
               }`}
             >
-              <GripVertical
-                size={16}
-                className="text-gray-700"
-              />
+              <GripVertical size={16} className="text-gray-700" />
             </div>
           )}
         </div>
@@ -370,7 +386,7 @@ const FormBuilder = () => {
               <div className="max-w-4xl mx-auto bg-gradient-to-br from-gray-100 to-white rounded-lg shadow p-6 min-h-96">
                 {formSchema.fields.length === 0 ? (
                   <div
-                    className="flex items-center justify-center h-96 border-2 border-dashed border-gray-400 rounded cursor-pointer hover:border-blue-500 transition"
+                    className="flex items-center justify-center h-96 border-2 border-dotted border-gray-400 rounded cursor-pointer hover:border-blue-500 transition"
                     onDragOver={(e) => {
                       e.preventDefault();
                       setDropIndex(0);
@@ -445,24 +461,12 @@ const FormBuilder = () => {
                         />
                       </div>
                     ))}
-
                     <div
-                      className={`min-h-[50px] flex items-center justify-center p-4 transition-all duration-200 ${
-                        dropIndex === formSchema.fields.length &&
-                        draggedFieldIndex === null
-                          ? "border-2 border-dashed border-blue-400 bg-blue-50"
-                          : "border-2 border-dashed border-transparent hover:border-gray-300"
-                      } rounded cursor-pointer`}
+                      className={`min-h-[50px] flex items-center justify-center p-4 transition-all duration-200`}
                       onDragOver={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        if (
-                          draggedFieldIndex !== null &&
-                          draggedFieldIndex === formSchema.fields.length
-                        ) {
-                          setDropIndex(formSchema.fields.length);
-                          return;
-                        }
+                        setDropIndex(formSchema.fields.length);
                       }}
                       onDrop={(e) => {
                         e.preventDefault();
@@ -473,17 +477,18 @@ const FormBuilder = () => {
                             formSchema.fields.length
                           );
                           setDraggedFieldIndex(null);
-                          return;
+                        } else {
+                          handleDrop(e, formSchema.fields.length);
                         }
-                        handleDrop(e, formSchema.fields.length);
+                        setDropIndex(null);
                       }}
-                      onDragLeave={(e) => {
+                      onDragLeave={() => {
                         setDropIndex(null);
                       }}
                     >
                       {dropIndex === formSchema.fields.length &&
                       draggedFieldIndex === null ? (
-                        <div className="p-3 opacity-70">
+                        <div className="border-2 border-dashed border-blue-400 bg-blue-50 p-3 rounded opacity-70 w-full">
                           <FormField
                             field={getDefaultField(draggedFieldType)}
                             isPreview={true}

@@ -42,7 +42,7 @@ const Settings = ({ field, onClose, onSave }) => {
       <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-blue-700 p-3.5 z-10 shadow-md">
         <div className="flex justify-between items-center">
           <h3 className="text-xl font-bold text-white drop-shadow-sm">
-            {editedField.type} Settings
+            {editedField.type.toUpperCase()} Settings
           </h3>
           <button
             onClick={onClose}

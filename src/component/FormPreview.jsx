@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { FormField } from "./FormBuilder";
+import { X } from "lucide-react";
 
 const FormPreview = ({ formSchema }) => {
   const [formData, setFormData] = useState({});
@@ -53,7 +54,7 @@ const FormPreview = ({ formSchema }) => {
               onClick={closeModal}
               className="absolute top-3 right-3 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full p-1 transition-colors"
             >
-              ✕
+              <X/>
             </button>
             <h3 className="text-lg font-semibold text-green-800 mb-4">
               {formSchema?.successMessage || "Form Submitted Successfully!"}
@@ -77,7 +78,13 @@ const FormPreview = ({ formSchema }) => {
                       {field.label}
                     </td>
                     <td className="border px-4 py-2 text-gray-600">
-                      {formData[field.id] || "—"}
+                      {Array.isArray(formData[field.id])
+                        ? formData[field.id].join(", ")
+                        : typeof formData[field.id] === "boolean"
+                        ? formData[field.id]
+                          ? "Yes"
+                          : "No"
+                        : formData[field.id] || "—"}
                     </td>
                   </tr>
                 ))}
